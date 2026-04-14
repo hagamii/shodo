@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>書道 級段記録</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f5f5f3;
+      --text: #1a1a1a;
+      --text-secondary: #6b6b68;
+      --border: rgba(0,0,0,0.12);
+      --border-hover: rgba(0,0,0,0.25);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --green: #1D9E75;
+      --green-bg: #EAF3DE;
+      --green-text: #3B6D11;
+      --red-bg: #FCEBEB;
+      --red-text: #A32D2D;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --bg-secondary: #2c2c2e;
+        --text: #f0f0ee;
+        --text-secondary: #9a9a97;
+        --border: rgba(255,255,255,0.12);
+        --border-hover: rgba(255,255,255,0.25);
+        --green-bg: #0A2A18;
+        --green-text: #6DD4A0;
+        --red-bg: #2A0A0A;
+        --red-text: #F09595;
+      }
+    }
+
+    body {
+      font-family: -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: var(--bg-secondary);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app { max-width: 480px; margin: 0 auto; background: var(--bg); min-height: 100vh; padding-bottom: 80px; }
+
+    .header { padding: 20px 16px 12px; border-bottom: 0.5px solid var(--border); }
+    .header h1 { font-size: 20px; font-weight: 500; letter-spacing: 0.05em; }
+    .header p  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    .tab-bar { display: flex; border-bottom: 0.5px solid var(--border); position: sticky; top: 0; background: var(--bg); z-index: 10; }
+    .tab { flex: 1; padding: 10px 0; font-size: 13px; color: var(--text-secondary); background: none; border: none; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; }
+    .tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--text); }
+
+    .section { display: none; padding: 16px; }
+    .section.active { display: block; }
+
+    /* --- ダッシュボード --- */
+    .grade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .grade-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; cursor: pointer; transition: border-color 0.15s; }
+    .grade-card:hover { border-color: var(--border-hover); }
+    .cat-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; letter-spacing: 0.08em; display: flex; align-items: center; gap: 5px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .grade-val  { font-size: 24px; font-weight: 500; line-height: 1; }
+    .grade-date { font-size: 11px; color: var(--text-secondary); margin-top: 5px; }
+    .grade-date.linked { color: var(--green); }
+    .grade-hint { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+    /* --- モーダル --- */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); width: 100%; max-width: 340px; padding: 20px; }
+    .modal h3 { font-size: 16px; font-weight: 500; margin-bottom: 16px; }
+    .modal label { font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 6px; }
+    .modal select,
+    .modal input[type="month"] {
+      width: 100%; margin-bottom: 16px; font-size: 15px; padding: 8px 10px;
+      border: 0.5px solid var(--border); border-radius: var(--radius-md);
+      background: var(--bg); color: var(--text); font-family: inherit;
+    }
+    .modal-note { font-size: 11px; color: var(--text-secondary); margin-top: -10px; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn { padding: 7px 16px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; border: 0.5px solid var(--border-hover); background: none; color: var(--text); font-family: inherit; }
+    .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+    /* --- 受験履歴 --- */
+    .add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 11px; border: 0.5px dashed var(--border-hover); border-radius: var(--radius-lg); background: none; color: var(--text-secondary); font-size: 13px; cursor: pointer; margin-bottom: 16px; font-family: inherit; }
+    .add-btn:hover { background: var(--bg-secondary); }
+
+    .filter-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-chip { padding: 5px 12px; border-radius: 999px; border: 0.5px solid var(--border); background: none; font-size: 12px; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+    .filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+    .history-thumb { width: 48px; height: 48px; border-radius: var(--radius-md); flex-shrink: 0; background: var(--bg-secondary); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .history-thumb img { width: 48px; height: 48px; object-fit: cover; }
+    .history-info { flex: 1; min-width: 0; }
+    .hi-cat   { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.05em; }
+    .hi-grade { font-size: 15px; font-weight: 500; }
+    .hi-date  { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+    .history-badge { font-size: 11px; padding: 3px 8px; border-radius: var(--radius-md); font-weight: 500; white-space: nowrap; }
+    .badge-pass { background: var(--green-bg); color: var(--green-text); }
+    .badge-fail { background: var(--red-bg);   color: var(--red-text); }
+
+    /* --- ギャラリー --- */
+    .image-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .image-cell { aspect-ratio: 1; border-radius: var(--radius-md); overflow: hidden; border: 0.5px solid var(--border); background: var(--bg-secondary); cursor: pointer; position: relative; }
+    .image-cell img { width: 100%; height: 100%; object-fit: cover; }
+    .img-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 10px; padding: 3px 5px; }
+    .image-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-secondary); font-size: 11px; }
+    .image-add span:first-child { font-size: 24px; }
+
+    .empty { text-align: center; padding: 40px 0; color: var(--text-secondary); font-size: 13px; }
+    .hint  { font-size: 12px; color: var(--text-secondary); text-align: center; margin-top: 4px; }
+
+    .dot-kanji    { background: #1D9E75; }
+    .dot-chusai   { background: #378ADD; }
+    .dot-kana     { background: #D4537E; }
+    .dot-kouhitsu { background: #BA7517; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>書道 級段記録</h1>
+    <p>検定の記録・作品管理アプリ</p>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('dashboard')">現在の級段</button>
+    <button class="tab" onclick="switchTab('history')">受験履歴</button>
+    <button class="tab" onclick="switchTab('gallery')">作品ギャラリー</button>
+  </div>
+
+  <div id="tab-dashboard" class="section active">
+    <div class="grade-grid" id="grade-grid"></div>
+    <p class="hint">カードをタップして級段を更新できます</p>
+  </div>
+
+  <div id="tab-history" class="section">
+    <button class="add-btn" onclick="openAddHistory()">＋ 検定結果を記録する</button>
+    <div class="filter-row" id="history-filter"></div>
+    <div class="history-list" id="history-list"></div>
+  </div>
+
+  <div id="tab-gallery" class="section">
+    <div class="filter-row" id="gallery-filter"></div>
+    <div class="image-grid" id="image-grid"></div>
+    <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+  </div>
+</div>
+
+<!-- 級段更新モーダル -->
+<div class="modal-overlay" id="grade-modal" style="display:none">
+  <div class="modal">
+    <h3 id="modal-title">級段を更新</h3>
+    <label>現在の級段</label>
+    <select id="grade-select"></select>
+    <label>取得年月（手動で設定する場合）</label>
+    <input type="month" id="grade-date-input">
+    <p class="modal-note">※受験履歴に合格記録があれば自動で反映されます</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('grade-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveGrade()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 履歴追加モーダル -->
+<div class="modal-overlay" id="history-modal" style="display:none">
+  <div class="modal">
+    <h3>検定結果を記録</h3>
+    <label>種目</label>
+    <select id="h-cat"></select>
+    <label>受験した級段</label>
+    <select id="h-grade"></select>
+    <label>結果</label>
+    <select id="h-result">
+      <option value="pass">合格</option>
+      <option value="fail">不合格</option>
+    </select>
+    <label>年月</label>
+    <input type="month" id="h-date">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('history-modal')">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveHistory()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  { id: 'kanji',    label: '漢字',   dotClass: 'dot-kanji' },
+  { id: 'chusai',   label: '中細字', dotClass: 'dot-chusai' },
+  { id: 'kana',     label: 'かな',   dotClass: 'dot-kana' },
+  { id: 'kouhitsu', label: '硬筆',   dotClass: 'dot-kouhitsu' },
+];
+
+const ALL_GRADES = (() => {
+  const list = ['新'];
+  ['七','六','五','四','三','二','一'].forEach(n => {
+    list.push('準' + n + '級');
+    list.push(n + '級');
+  });
+  ['初','二','三','四','五','六','七','八'].forEach((n, i) => {
+    list.push('準' + (i === 0 ? '初段' : n + '段'));
+    list.push(i === 0 ? '初段' : n + '段');
+  });
+  return list;
+})();
+
+function load(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+let grades          = load('shodo_grades',       { kanji:'新', chusai:'新', kana:'新', kouhitsu:'新' });
+let gradeDates      = load('shodo_grade_dates',  { kanji:null, chusai:null, kana:null, kouhitsu:null });
+let history         = load('shodo_history',      []);
+let images          = load('shodo_images',       []);
+let editingCat      = null;
+let galleryFilterCat = 'all';
+let historyFilterCat = 'all';
+let pendingImageCat  = 'kanji';
+
+function getLatestPassDate(catId) {
+  const passes = history
+    .filter(h => h.cat === catId && h.result === 'pass' && h.date)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  return passes.length > 0 ? passes[0].date : null;
+}
+
+function formatYearMonth(ym) {
+  if (!ym) return null;
+  const [y, m] = ym.split('-');
+  return y + '年' + parseInt(m) + '月';
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['dashboard','history','gallery'][i] === name));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'history')   renderHistory();
+  if (name === 'gallery')   renderGallery();
+}
+
+function renderDashboard() {
+  document.getElementById('grade-grid').innerHTML = CATS.map(c => {
+    const linkedDate = getLatestPassDate(c.id);
+    const displayDate = linkedDate || gradeDates[c.id];
+    const isLinked = !!linkedDate;
+    const dateLabel = displayDate
+      ? `<div class="grade-date ${isLinked ? 'linked' : ''}">${formatYearMonth(displayDate)} 取得${isLinked ? ' ✓' : ''}</div>`
+      : `<div class="grade-date">取得年月未設定</div>`;
+    return `
+      <div class="grade-card" onclick="openGradeEdit('${c.id}')">
+        <div class="cat-label"><span class="dot ${c.dotClass}"></span>${c.label}</div>
+        <div class="grade-val">${grades[c.id]}</div>
+        ${dateLabel}
+        <div class="grade-hint">タップして編集</div>
+      </div>`;
+  }).join('');
+}
+
+function openGradeEdit(catId) {
+  editingCat = catId;
+  document.getElementById('modal-title').textContent = CATS.find(c => c.id === catId).label + ' の級段を更新';
+  document.getElementById('grade-select').innerHTML =
+    ALL_GRADES.map(g => `<option value="${g}" ${grades[catId] === g ? 'selected' : ''}>${g}</option>`).join('');
+  document.getElementById('grade-date-input').value = gradeDates[catId] || '';
+  document.getElementById('grade-modal').style.display = 'flex';
+}
+
+function saveGrade() {
+  grades[editingCat]     = document.getElementById('grade-select').value;
+  gradeDates[editingCat] = document.getElementById('grade-date-input').value || null;
+  save('shodo_grades',      grades);
+  save('shodo_grade_dates', gradeDates);
+  closeModal('grade-modal');
+  renderDashboard();
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function renderHistory() {
+  const allChips = [{ id:'all', label:'すべて' }, ...CATS];
+  document.getElementById('history-filter').innerHTML = allChips.map(c =>
+    `<button class="filter-chip ${historyFilterCat === c.id ? 'active' : ''}" onclick="setHistoryFilter('${c.id}')">${c.label}</button>`
+  ).join('');
+
+  const filtered = historyFilterCat === 'all' ? history : history.filter(h => h.cat === historyFilterCat);
+  const sorted   = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+  const list = document.getElementById('history-list');
+  if (!sorted.length) { list.innerHTML = '<div class="empty">まだ記録がありません</div>'; return; }
+  list.innerHTML = sorted.map(h => {
+    const cat = CATS.find(c => c.id === h.cat);
+    const imgHtml = h.imageData
+      ? `<div class="history-thumb"><img src="${h.imageData}" alt="作品"></div>`
+      : `<div class="history-thumb"><span style="font-size:18px;color:var(--text-secondary)">✏</span></div>`;
+    return `
+      <div class="history-item">
+        ${imgHtml}
+        <div class="history-info">
+          <div class="hi-cat">${cat ? cat.label : h.cat}</div>
+          <div class="hi-grade">${h.grade}</div>
+          <div class="hi-date">${formatYearMonth(h.date)}</div>
+        </div>
+        <span class="history-badge ${h.result === 'pass' ? 'badge-pass' : 'badge-fail'}">${h.result === 'pass' ? '合格' : '不合格'}</span>
+      </div>`;
+  }).join('');
+}
+
+function setHistoryFilter(cat) { historyFilterCat = cat; renderHistory(); }
+
+function openAddHistory() {
+  document.getElementById('h-cat').innerHTML   = CATS.map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  document.getElementById('h-grade').innerHTML = ALL_GRADES.map(g => `<option value="${g}">${g}</option>`).join('');
+  const today = new Date();
+  document.getElementById('h-date').value = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+  document.getElementById('history-modal').style.display = 'flex';
+}
+
+function saveHistory() {
+  history.unshift({
+    id: Date.now(),
+    cat:       document.getElementById('h-cat').value,
+    grade:     document.getElementById('h-grade').value,
+    result:    document.getElementById('h-result').value,
+    date:      document.getElementById('h-date').value,
+    imageData: null,
+  });
+  save('shodo_history', history);
+  closeModal('history-modal');
+  renderHistory();
+}
+
+function renderGallery() {
+  const allChips = [{ id:'all', label:'すべて' }, ...CATS];
+  document.getElementById('gallery-filter').innerHTML = allChips.map(c =>
+    `<button class="filter-chip ${galleryFilterCat === c.id ? 'active' : ''}" onclick="setGalleryFilter('${c.id}')">${c.label}</button>`
+  ).join('');
+
+  const filtered = galleryFilterCat === 'all' ? images : images.filter(img => img.cat === galleryFilterCat);
+  const addCell  = `<div class="image-cell image-add" onclick="triggerImageUpload()">
+    <span>＋</span><span>作品を追加</span>
+  </div>`;
+  document.getElementById('image-grid').innerHTML = addCell + filtered.map(img => {
+    const cat = CATS.find(c => c.id === img.cat);
+    return `<div class="image-cell">
+      <img src="${img.data}" alt="作品">
+      <div class="img-label">${cat ? cat.label : ''} ${img.grade}</div>
+    </div>`;
+  }).join('');
+}
+
+function setGalleryFilter(cat) { galleryFilterCat = cat; renderGallery(); }
+
+function triggerImageUpload() {
+  pendingImageCat = galleryFilterCat === 'all' ? 'kanji' : galleryFilterCat;
+  document.getElementById('file-input').click();
+}
+
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    images.unshift({ id: Date.now(), cat: pendingImageCat, grade: grades[pendingImageCat] || '新', data: ev.target.result, date: new Date().toISOString().slice(0, 7) });
+    save('shodo_images', images);
+    renderGallery();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+renderDashboard();
+</script>
+</body>
+</html>
