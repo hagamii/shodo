@@ -104,7 +104,11 @@
 </head>
 <body>
 <div class="app">
-  <div class="header"><h1>書道 級段記録</h1><p>検定の記録・作品管理アプリ</p></div>
+  <div class="header">
+    <h1>書道 級段記録</h1>
+    <p>検定の記録・作品管理アプリ</p>
+    <button onclick="runDiag()" style="margin-top:8px;font-size:11px;padding:4px 10px;border:0.5px solid var(--border2);border-radius:var(--r);background:none;color:var(--text2);cursor:pointer;font-family:inherit;">🔍 データ診断</button>
+  </div>
   <div class="tab-bar">
     <button class="tab active" onclick="switchTab('dashboard')">現在の級段</button>
     <button class="tab" onclick="switchTab('history')">受験履歴</button>
@@ -355,6 +359,48 @@ function openLightbox(src){document.getElementById('lightbox-img').src=src;docum
 function closeLightbox(){document.getElementById('lightbox').style.display='none';document.getElementById('lightbox-img').src='';}
 
 renderDashboard();
+
+function runDiag() {
+  const results = [];
+
+  // 1. localStorageが使えるか
+  try {
+    localStorage.setItem('shodo_diag_test', '1');
+    const v = localStorage.getItem('shodo_diag_test');
+    localStorage.removeItem('shodo_diag_test');
+    results.push(v === '1' ? '✅ localStorage: 読み書きOK' : '❌ localStorage: 書けたが読めない');
+  } catch(e) {
+    results.push('❌ localStorage: 使用不可 (' + e.message + ')');
+  }
+
+  // 2. 保存されているデータの確認
+  const keys = ['shodo_grades','shodo_grade_dates','shodo_history','shodo_images'];
+  keys.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v === null) {
+      results.push('⚠️ ' + k + ': 未保存（null）');
+    } else {
+      try {
+        const parsed = JSON.parse(v);
+        const size = v.length;
+        if (k === 'shodo_history') results.push('✅ ' + k + ': ' + parsed.length + '件 (' + size + '文字)');
+        else if (k === 'shodo_images') results.push('✅ ' + k + ': ' + parsed.length + '件 (' + size + '文字)');
+        else results.push('✅ ' + k + ': 保存済み (' + size + '文字)');
+      } catch(e) {
+        results.push('❌ ' + k + ': データ破損');
+      }
+    }
+  });
+
+  // 3. localStorageの合計サイズ
+  let total = 0;
+  for (let k in localStorage) {
+    if (localStorage.hasOwnProperty(k)) total += (localStorage[k].length + k.length) * 2;
+  }
+  results.push('📦 合計サイズ: 約' + Math.round(total/1024) + 'KB');
+
+  alert(results.join('\n'));
+}
 </script>
 </body>
 </html>
